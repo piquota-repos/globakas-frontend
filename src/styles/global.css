@@ -1,0 +1,83 @@
+:root {
+    --primary-bg-color: #577590;  
+    --primary-btn-color: #4b89dc; 
+    --primary-btn-hover-color: #3b71b3; 
+    --input-border-color: #ddd;  
+    --input-focus-border-color: #4b89dc;  
+    --text-color: #fff;  
+    --heading-color: #fff;  
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--primary-bg-color);  
+    color: var(--text-color);  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  
+  h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: var(--heading-color);  
+  }
+  
+  button {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    color: white;
+    background-color: var(--primary-btn-color); /* Global button color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  button:hover {
+    background-color: var(--primary-btn-hover-color); /* Global button hover color */
+  }
+  
+  button:focus {
+    outline: none;
+  }
+  
+  input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 2px solid var(--input-border-color); /* Global input border color */
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  input:focus {
+    border-color: var(--input-focus-border-color); /* Global input focus color */
+    outline: none;
+  }
+  
+  input::placeholder {
+    color: #888;
+  }
+  
+  input[type='password'] {
+    margin-bottom: 24px;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-color); /* Global text color */
+  }
+  
