@@ -1,76 +1,110 @@
-/* Custom scrollbar styles */
-.overflow-auto::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+/* General Dashboard Styles */
+.Dashboard {
+  font-family: 'Arial', sans-serif;
+  background-color: var(--page-bg-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+/* Header */
+.Dashboard h2 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.Dashboard p {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+/* File Upload Section */
+.Dashboard input[type="file"] {
+  margin: 10px;
+  padding: 10px;
+  font-size: 1rem;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.Dashboard input[type="file"]:hover {
+  background-color: #e7e7e7;
+}
+
+/* Compare Button */
+.Dashboard button {
+  background-color: #0d47a1;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.Dashboard button:hover {
+  background-color: #0b358d;
+}
+
+/* Compared Data Section */
+.Dashboard .compared-data {
+  margin-top: 30px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
+  width: 100%;
+}
+
+.Dashboard .compared-data h3 {
+  font-size: 1.8rem;
+  color: #0d47a1;
+  margin-bottom: 15px;
+}
+
+.Dashboard .compared-data pre {
+  font-size: 1rem;
+  background-color: #f4f4f4;
+  padding: 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .Dashboard {
+    padding: 20px;
   }
-  
-  .overflow-auto::-webkit-scrollbar-track {
-    background: rgba(75, 137, 220, 0.1);
-    border-radius: 4px;
+
+  .Dashboard h2 {
+    font-size: 2rem;
   }
-  
-  .overflow-auto::-webkit-scrollbar-thumb {
-    background: rgba(75, 137, 220, 0.3);
-    border-radius: 4px;
+
+  .Dashboard input[type="file"] {
+    width: 100%;
+    margin-bottom: 10px;
   }
-  
-  .overflow-auto::-webkit-scrollbar-thumb:hover {
-    background: rgba(75, 137, 220, 0.4);
+
+  .Dashboard button {
+    width: 100%;
+    padding: 12px 0;
   }
-  
-  /* Smooth transitions */
-  .transition-all {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
+
+  .Dashboard .compared-data {
+    width: 100%;
+    padding: 15px;
   }
-  
-  /* Chart tooltips custom styles */
-  .recharts-tooltip-wrapper {
-    outline: none;
-  }
-  
-  .recharts-tooltip-item-name,
-  .recharts-tooltip-item-value {
-    color: #fff !important;
-  }
-  
-  /* Remove default chart background */
-  .recharts-surface {
-    background: transparent;
-  }
-  
-  /* Table hover animation */
-  tr {
-    transition: background-color 150ms ease-in-out;
-  }
-  
-  /* Card hover animation */
-  .hover\:shadow-xl {
-    transition: box-shadow 150ms ease-in-out;
-  }
-  
-  /* Input focus styles */
-  input:focus {
-    box-shadow: 0 0 0 2px rgba(75, 137, 220, 0.3);
-  }
-  
-  /* Print styles */
-  @media print {
-    .no-print {
-      display: none;
-    }
-    
-    /* .bg-[#577590] {
-      background: white !important;
-      color: black !important;
-    } */
-    
-    .text-white {
-      color: black !important;
-    }
-    
-    .shadow-lg {
-      box-shadow: none !important;
-    }
-  }
+}

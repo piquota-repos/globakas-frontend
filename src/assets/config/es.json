@@ -1,0 +1,86 @@
+{
+    "landingPage": {
+      "nav": {
+        "features": "Características",
+        "pricing": "Precios",
+        "about": "Acerca de",
+        "login": "Iniciar sesión"
+      },
+      "hero": {
+        "title": "Transforma tu negocio con nuestra solución",
+        "subtitle": "Experimenta el poder de la integración sin interrupciones y la analítica en tiempo real.",
+        "emailPlaceholder": "Introduce tu correo de trabajo",
+        "demoButton": "Solicitar demo"
+      },
+      "features": {
+        "title": "Características poderosas",
+        "items": [
+          {
+            "title": "Fácil integración",
+            "description": "Conecta tus sistemas en minutos con nuestra solución plug-and-play",
+            "icon": "check-circle"
+          },
+          {
+            "title": "Análisis en tiempo real",
+            "description": "Obtén información instantánea sobre el rendimiento de tu negocio",
+            "icon": "gift"
+          },
+          {
+            "title": "Soporte 24/7",
+            "description": "Nuestro equipo experto está siempre disponible para ayudarte a tener éxito",
+            "icon": "users"
+          }
+        ]
+      },
+      "pricing": {
+        "title": "Precios sencillos",
+        "plans": [
+          {
+            "tier": "Básico",
+            "price": "$49",
+            "features": ["Integración básica", "5 usuarios", "Soporte comunitario"]
+          },
+          {
+            "tier": "Profesional",
+            "price": "$99",
+            "features": ["Integración avanzada", "Usuarios ilimitados", "Soporte 24/7"]
+          },
+          {
+            "tier": "Empresarial",
+            "price": "Personalizado",
+            "features": ["Integración personalizada", "Soporte dedicado", "Garantía SLA"]
+          }
+        ],
+        "button": "Comenzar"
+      },
+      "about": {
+        "title": "Sobre nosotros",
+        "mission": {
+          "title": "Nuestra misión",
+          "text": "Estamos en una misión para transformar la forma en que las empresas gestionan sus operaciones. Con nuestra plataforma innovadora, ayudamos a empresas de todos los tamaños a optimizar sus procesos y lograr mejores resultados."
+        },
+        "values": {
+          "title": "Nuestros valores",
+          "items": ["Cliente primero", "Innovación", "Transparencia", "Excelencia"]
+        }
+      },
+      "cta": {
+        "title": "¿Listo para comenzar?",
+        "subtitle": "Únete a miles de empresas que ya utilizan nuestra plataforma para escalar su negocio",
+        "button": "Agendar una demo"
+      }
+    },
+    "login": {
+      "welcomeBack": "¡Bienvenido de nuevo!",
+      "chooseSignInMethod": "Elige tu método de inicio de sesión",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "signIn": "Iniciar sesión",
+      "register": "Registrar",
+      "createAccount": "Crear cuenta",
+      "confirmPassword": "Confirmar contraseña",
+      "orContinueWith": "O continúa con",
+      "terms": "Al iniciar sesión, aceptas nuestros Términos y Condiciones"
+    }
+  }
+  

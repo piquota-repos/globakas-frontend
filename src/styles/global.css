@@ -5,7 +5,8 @@
     --input-border-color: #ddd;  
     --input-focus-border-color: #4b89dc;  
     --text-color: #fff;  
-    --heading-color: #fff;  
+    --heading-color: #000;  
+    --page-bg-color: #d8e3ed;  
   }
   
   * {
@@ -14,26 +15,17 @@
     box-sizing: border-box;
   }
   
-  body {
-    font-family: 'Arial', sans-serif;
-    background-color: var(--primary-bg-color);  
-    color: var(--text-color);  
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-  }
+  
   
   h2 {
     text-align: center;
     font-size: 24px;
     margin-bottom: 20px;
-    color: var(--heading-color);  
+    /* color: var(--heading-color);   */
   }
   
   button {
-    width: 100%;
+    /* width: 100%; */
     padding: 10px;
     font-size: 16px;
     color: white;
@@ -55,7 +47,7 @@
   input {
     width: 100%;
     padding: 12px;
-    margin-bottom: 16px;
+    /* margin-bottom: 16px; */
     border: 2px solid var(--input-border-color); /* Global input border color */
     border-radius: 5px;
     font-size: 16px;
@@ -70,9 +62,9 @@
     color: #888;
   }
   
-  input[type='password'] {
-    margin-bottom: 24px;
-  }
+  /* input[type='password'] {
+    margin-bottom: 10px;
+  } */
   
   label {
     display: block;

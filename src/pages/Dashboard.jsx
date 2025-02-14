@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import "../styles/dashboard.css"
 
 const Dashboard = () => {
   const [file1, setFile1] = useState(null);
