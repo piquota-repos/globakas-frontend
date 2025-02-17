@@ -66,7 +66,7 @@ const Login = () => {
         </div>
 
         <div className="language-selector tabs">
-          <Button 
+          <Button
             variant={languageTab === 'english' ? 'primary' : 'secondary'}
             onClick={() => {
               handleLanguageChange('en');
