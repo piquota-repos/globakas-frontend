@@ -1,6 +1,6 @@
 import React from 'react';
 import { LayoutDashboard, FolderSearch, History, Settings, GitCompare, HelpCircle, LogOut, Menu, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';  // Import useLocation
+import { Link, useLocation } from 'react-router-dom'; 
 import "../styles/dashboard.css";
 
 const SideMenu = ({ isSidebarOpen, setIsSidebarOpen }) => {
@@ -8,7 +8,7 @@ const SideMenu = ({ isSidebarOpen, setIsSidebarOpen }) => {
   
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <GitCompare size={20} />, label: 'Reconciliation Control', path: '/reconciliation' },
+    { icon: <GitCompare size={20} />, label: 'Reconcilation Control', path: '/reconcilation' },
     { icon: <FolderSearch size={20} />, label: 'Record Finder', path: '/recordfinder' },
     { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
     { icon: <History size={20} />, label: 'History', path: '/history' },

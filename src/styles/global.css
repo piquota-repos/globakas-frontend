@@ -70,6 +70,6 @@
     display: block;
     margin-bottom: 8px;
     font-size: 14px;
-    color: var(--text-color); /* Global text color */
+    color: #000; /* Global text color */
   }
   
