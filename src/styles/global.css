@@ -45,7 +45,7 @@
   }
   
   input {
-    width: 100%;
+    width: auto;
     padding: 12px;
     /* margin-bottom: 16px; */
     border: 2px solid var(--input-border-color); /* Global input border color */
