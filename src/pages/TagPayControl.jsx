@@ -14,6 +14,7 @@ const TagPayControl = () => {
   const [switchFile, setSwitchFile] = useState(null);
   const [downloadedFile, setDownloadedFile] = useState(null);
   const [processedTagPayFile, setProcessedTagPayFile] = useState(null);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
   const switchFileInputRef = useRef(null);
  
@@ -45,6 +46,7 @@ const TagPayControl = () => {
       setStatusMessage(`Error: ${error.message}`);
     } finally {
       setIsProcessing(false);
+      setProgress(0);
     }
   };
  
@@ -81,6 +83,7 @@ const TagPayControl = () => {
     }
     try {
       setIsProcessing(true);
+      setProgress(0);
       setStatusMessage('Processing files and filtering data...');
       const downloadedBuffer = await downloadedFile.arrayBuffer();
       const uploadedBuffer = await uploadedFile.arrayBuffer();
@@ -91,6 +94,8 @@ const TagPayControl = () => {
       const downloadedSheet = downloadedWorkbook.getWorksheet('Transacciones');
       const uploadedSheet = uploadedWorkbook.getWorksheet('TAGPAY');
       const tagpayOKOriginalSheet = uploadedWorkbook.getWorksheet('TAGPAY OK');
+
+      setProgress(20);
 
       if (!downloadedSheet || !uploadedSheet) {
         setStatusMessage('Error: Required sheets not found in either downloaded or uploaded file.');
@@ -128,6 +133,9 @@ const TagPayControl = () => {
           });
         }
       });
+
+      setProgress(40);
+      
       // Create the TAGPAY sheet with original formatting
       const newTagpaySheet = newWorkbook.addWorksheet('TAGPAY', {
         properties: uploadedSheet.properties,
@@ -159,6 +167,9 @@ const TagPayControl = () => {
       tagpayHeaderRow.eachCell((cell, colNumber) => {
         tagpayHeaders[colNumber] = cell.value;
       }); 
+
+      setProgress(50);
+      
       // Copy data from downloaded sheet to TAGPAY sheet
       downloadedSheet.eachRow((row, rowNumber) => {
         if (rowNumber > 1) { // Skip header row
@@ -178,6 +189,9 @@ const TagPayControl = () => {
           newTagpaySheet.addRow(rowValues);
         }
       });
+
+      setProgress(60);
+      
       // Create a new "TAGPAY OK" sheet with preserved formatting from the original
       const newTagpayOKSheet = newWorkbook.addWorksheet('TAGPAY OK', {
         properties: tagpayOKOriginalSheet.properties,
@@ -200,8 +214,15 @@ const TagPayControl = () => {
           newTagpayOKSheet.getColumn(index + 1).width = col.width;
         }
       });
-      // Get the TAGPAY data and filter it
+
+      setProgress(70);
+      
+      // Get the TAGPAY data and filter it - Using a more memory-efficient approach
+      let tagpayDataCount = 0;
+      
+      // First pass to filter and sort
       const tagpayData = [];
+      
       // Apply filtering criteria: Estado = "OK" (column 5) and Tipo = "DEBIT/CREDIT API" (column 10)
       newTagpaySheet.eachRow((row, rowNumber) => {
         if (rowNumber > 1) { // Skip header row
@@ -209,27 +230,25 @@ const TagPayControl = () => {
           const tipo = row.getCell(10).value;  // Column J (Tipo)
           // Apply exact filtering criteria
           if (estado === 'OK' && tipo === 'DEBIT/CREDIT API') {
-            // Store the entire row with its values
+            // Only store necessary information for sorting
             tagpayData.push({
               rowNumber: rowNumber,
-              values: row.values,
-              // Store column G value for sorting
-              columnG: row.getCell(7).value
+              columnG: row.getCell(7).value || ''
             });
+            tagpayDataCount++;
           }
         }
       }); 
+
       // If no rows matched, provide a clear message
       if (tagpayData.length === 0) {
         setStatusMessage('Warning: No rows matched the filter criteria (Estado="OK" AND Tipo="DEBIT/CREDIT API")');
-      } else {
-        // Sort the filtered data by column G (which is index 7 in ExcelJS)
+      } else { 
+        // Sort by column G
         tagpayData.sort((a, b) => {
-          // Handle different data types for proper sorting
           let valueA = a.columnG;
           let valueB = b.columnG;
-
-          // Convert to string for consistent comparison if not null/undefined
+ 
           if (valueA !== null && valueA !== undefined) {
             valueA = valueA.toString();
           } else {
@@ -240,43 +259,48 @@ const TagPayControl = () => {
             valueB = valueB.toString();
           } else {
             valueB = '';
-          }
-
-          // Compare the values
+          } 
           return valueA.localeCompare(valueB);
         });
-
-        console.log("Data sorted by column G");
       }
 
-      // Add the sorted and filtered data to the new TAGPAY OK sheet
-      tagpayData.forEach((item) => {
-        const newRow = newTagpayOKSheet.addRow(item.values);
-
-        // Get the original row from TAGPAY sheet to copy styles
+      setProgress(80);
+      
+      // Second pass to add rows in sorted order - more memory efficient
+      for (let i = 0; i < tagpayData.length; i++) {
+        const item = tagpayData[i];
         const originalRow = newTagpaySheet.getRow(item.rowNumber);
-
+        const newRow = newTagpayOKSheet.addRow(originalRow.values);
+        
         // Copy cell styles
         originalRow.eachCell((cell, colNumber) => {
           if (cell.value !== undefined) {
             const newCell = newRow.getCell(colNumber);
             newCell.style = Object.assign({}, cell.style);
-            newCell.value = cell.value;
           }
         });
-      });
+        
+        // Update progress periodically
+        if (i % 100 === 0) {
+          setProgress(80 + Math.floor((i / tagpayData.length) * 15));
+          // Allow UI to update by yielding execution
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
 
-      // Check if GKN sheets already exist in the uploaded workbook and create them only if they don't exist
-      // If they exist, we'll preserve them in the new workbook
+      // Clear memory
+      tagpayData.length = 0;
+      
       if (!newWorkbook.getWorksheet('GKN OK')) {
         newWorkbook.addWorksheet('GKN OK');
       }
       
       if (!newWorkbook.getWorksheet('GKN ERROR')) {
         newWorkbook.addWorksheet('GKN ERROR');
-      }
+      } 
 
-      // Save the updated workbook
+      setProgress(95);
+      
       const updatedBuffer = await newWorkbook.xlsx.writeBuffer();
       const blob = new Blob([updatedBuffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -301,7 +325,8 @@ const TagPayControl = () => {
       );
       setProcessedTagPayFile(processedFile);
 
-      setStatusMessage(`Success! Created "${updatedFileName}" with ${tagpayData.length} filtered rows in TAGPAY OK sheet, sorted by column G.`);
+      setStatusMessage(`Success! Created "${updatedFileName}" with ${tagpayDataCount} filtered rows in TAGPAY OK sheet, sorted by column G.`);
+      setProgress(100);
     } catch (error) {
       console.error('Error processing files:', error);
       setStatusMessage(`Error: ${error.message}`);
@@ -318,6 +343,7 @@ const TagPayControl = () => {
 
     try {
       setIsProcessing(true);
+      setProgress(0);
       setStatusMessage('Processing Switch file and updating TagPay file...');
 
       const switchBuffer = await switchFile.arrayBuffer();
@@ -329,18 +355,21 @@ const TagPayControl = () => {
       await switchWorkbook.xlsx.load(switchBuffer);
       await tagpayWorkbook.xlsx.load(tagpayBuffer);
 
+      setProgress(10);
+
       // Get the Detail sheet from the Switch file
       const detailSheet = switchWorkbook.getWorksheet('detail');
       if (!detailSheet) {
         setStatusMessage('Error: "Detail" sheet not found in the Switch file.');
         return;
-      }
-
-      // Get or create GKN OK and GKN ERROR sheets in the TagPay file
+      } 
+      
+      // Count total rows for progress tracking
+      const totalRows = detailSheet.rowCount;
+      
       let gknOKSheet = tagpayWorkbook.getWorksheet('GKN OK');
-      let gknErrorSheet = tagpayWorkbook.getWorksheet('GKN ERROR');
-
-      // If sheets exist, clear them first but keep the formatting
+      let gknErrorSheet = tagpayWorkbook.getWorksheet('GKN ERROR'); 
+      
       if (gknOKSheet) {
         // Save properties and column widths
         const properties = Object.assign({}, gknOKSheet.properties);
@@ -351,12 +380,9 @@ const TagPayControl = () => {
             columnWidths[index] = col.width;
           }
         });
-        
-        // Remove the sheet and recreate it
+         
         tagpayWorkbook.removeWorksheet(gknOKSheet.id);
-        gknOKSheet = tagpayWorkbook.addWorksheet('GKN OK', { properties, pageSetup });
-        
-        // Restore column widths
+        gknOKSheet = tagpayWorkbook.addWorksheet('GKN OK', { properties, pageSetup }); 
         columnWidths.forEach((width, index) => {
           if (width) {
             gknOKSheet.getColumn(index + 1).width = width;
@@ -375,13 +401,9 @@ const TagPayControl = () => {
           if (col.width) {
             columnWidths[index] = col.width;
           }
-        });
-        
-        // Remove the sheet and recreate it
+        }); 
         tagpayWorkbook.removeWorksheet(gknErrorSheet.id);
-        gknErrorSheet = tagpayWorkbook.addWorksheet('GKN ERROR', { properties, pageSetup });
-        
-        // Restore column widths
+        gknErrorSheet = tagpayWorkbook.addWorksheet('GKN ERROR', { properties, pageSetup }); 
         columnWidths.forEach((width, index) => {
           if (width) {
             gknErrorSheet.getColumn(index + 1).width = width;
@@ -391,10 +413,9 @@ const TagPayControl = () => {
         gknErrorSheet = tagpayWorkbook.addWorksheet('GKN ERROR');
       }
 
-      // Get header row from Detail sheet
-      const headerRow = detailSheet.getRow(1);
+      setProgress(20);
       
-      // Find the column indexes for the filtering criteria
+      const headerRow = detailSheet.getRow(1); 
       let actualDateColIndex = -1;
       let paymentTypeColIndex = -1;
       let statusColIndex = -1;
@@ -421,11 +442,8 @@ const TagPayControl = () => {
       ) {
         setStatusMessage('Error: Required columns not found in the Detail sheet.');
         return;
-      }
-
-      console.log(`Column indexes - ACTUAL DATE: ${actualDateColIndex}, PAYMENT TYPE: ${paymentTypeColIndex}, STATUS: ${statusColIndex}, TAGPAY CLEARING: ${tagpayClearingColIndex}`);
-
-      // Copy header row to both GKN sheets
+      } 
+      
       const headerValues = [];
       for (let i = 1; i <= 13; i++) { // Columns A to M
         headerValues[i] = headerRow.getCell(i).value;
@@ -446,65 +464,107 @@ const TagPayControl = () => {
           gknOKCell.value = cell.value;
           gknErrorCell.value = cell.value;
         }
-      });
+      }); 
 
-      // Filter and copy rows from Detail sheet to GKN OK and ERROR sheets
+      setProgress(30);
+      
+      // Process data in chunks to prevent memory issues
+      const CHUNK_SIZE = 1000; // Process 1000 rows at a time
       let okRowCount = 0;
       let errorRowCount = 0;
-
-      detailSheet.eachRow((row, rowNumber) => {
-        if (rowNumber > 1) { // Skip header row
-          const actualDate = row.getCell(actualDateColIndex).value;
-          const paymentType = row.getCell(paymentTypeColIndex).value;
-          const status = row.getCell(statusColIndex).value;
-          const tagpayClearing = row.getCell(tagpayClearingColIndex).value;
-
-          // Check if all required columns have values
-          if (actualDate && paymentType && status !== undefined && tagpayClearing) {
-            // Convert to string for consistent comparison
-            const paymentTypeStr = paymentType.toString().trim();
-            const statusStr = status.toString().trim();
-
-            // Filter for columns C (ACTUAL DATE), J (PAYMENT TYPE = "EF"), K (STATUS)
-            if (paymentTypeStr === 'EF') {
-              // Create row values for columns A to M
-              const rowValues = [];
-              for (let i = 1; i <= 13; i++) { // Columns A to M
-                rowValues[i] = row.getCell(i).value;
-              }
-
-              // Add to appropriate sheet based on STATUS
-              if (statusStr === 'OK') {
-                const newRow = gknOKSheet.addRow(rowValues);
-                
-                // Copy cell styles
-                row.eachCell((cell, colNumber) => {
-                  if (colNumber <= 13 && cell.value !== undefined) { // Only columns A to M
-                    const newCell = newRow.getCell(colNumber);
-                    newCell.style = Object.assign({}, cell.style);
+      
+      // Function to process a range of rows
+      const processRowChunk = async (startRow, endRow) => {
+        const okRows = [];
+        const errorRows = [];
+        
+        for (let rowNumber = startRow; rowNumber <= endRow; rowNumber++) {
+          if (rowNumber <= totalRows) { // Make sure we don't exceed actual rows
+            const row = detailSheet.getRow(rowNumber);
+            
+            if (rowNumber > 1) { // Skip header row
+              const actualDate = row.getCell(actualDateColIndex).value;
+              const paymentType = row.getCell(paymentTypeColIndex).value;
+              const status = row.getCell(statusColIndex).value;
+              const tagpayClearing = row.getCell(tagpayClearingColIndex).value;
+     
+              if (actualDate && paymentType && status !== undefined && tagpayClearing) { 
+                const paymentTypeStr = paymentType.toString().trim();
+                const statusStr = status.toString().trim();
+     
+                if (paymentTypeStr === 'EF') { 
+                  const rowValues = [];
+                  for (let i = 1; i <= 13; i++) {  
+                    rowValues[i] = row.getCell(i).value;
                   }
-                });
-                
-                okRowCount++;
-              } else if (statusStr === 'ERROR') {
-                const newRow = gknErrorSheet.addRow(rowValues);
-                
-                // Copy cell styles
-                row.eachCell((cell, colNumber) => {
-                  if (colNumber <= 13 && cell.value !== undefined) { // Only columns A to M
-                    const newCell = newRow.getCell(colNumber);
-                    newCell.style = Object.assign({}, cell.style);
+     
+                  if (statusStr === 'OK') {
+                    okRows.push({
+                      values: rowValues,
+                      styles: row
+                    });
+                  } else if (statusStr === 'ERROR') {
+                    errorRows.push({
+                      values: rowValues,
+                      styles: row
+                    });
                   }
-                });
-                
-                errorRowCount++;
+                }
               }
             }
           }
         }
-      });
-
-      // Set column widths for GKN sheets if they don't already have widths
+        
+        // Add ok rows to sheet
+        for (const rowData of okRows) {
+          const newRow = gknOKSheet.addRow(rowData.values);
+          
+          // Copy styles
+          rowData.styles.eachCell((cell, colNumber) => {
+            if (colNumber <= 13 && cell.value !== undefined) {
+              const newCell = newRow.getCell(colNumber);
+              newCell.style = Object.assign({}, cell.style);
+            }
+          });
+        }
+        
+        // Add error rows to sheet
+        for (const rowData of errorRows) {
+          const newRow = gknErrorSheet.addRow(rowData.values);
+          
+          // Copy styles
+          rowData.styles.eachCell((cell, colNumber) => {
+            if (colNumber <= 13 && cell.value !== undefined) {
+              const newCell = newRow.getCell(colNumber);
+              newCell.style = Object.assign({}, cell.style);
+            }
+          });
+        }
+        
+        okRowCount += okRows.length;
+        errorRowCount += errorRows.length;
+        
+        // Free memory
+        okRows.length = 0;
+        errorRows.length = 0;
+      };
+      
+      // Process the file in chunks
+      for (let startRow = 2; startRow <= totalRows; startRow += CHUNK_SIZE) {
+        const endRow = Math.min(startRow + CHUNK_SIZE - 1, totalRows);
+        await processRowChunk(startRow, endRow);
+        
+        // Update progress
+        const progressPercentage = 30 + Math.floor(((startRow + CHUNK_SIZE) / totalRows) * 50);
+        setProgress(Math.min(progressPercentage, 80));
+        
+        // Allow UI to update by yielding execution
+        await new Promise(resolve => setTimeout(resolve, 0));
+        
+        setStatusMessage(`Processing Switch file... Processed ${startRow + CHUNK_SIZE > totalRows ? totalRows : startRow + CHUNK_SIZE} of ${totalRows} rows`);
+      }
+      
+      // Set column widths
       for (let i = 1; i <= 13; i++) {
         const originalWidth = detailSheet.getColumn(i).width;
         if (originalWidth) {
@@ -518,7 +578,9 @@ const TagPayControl = () => {
         }
       }
 
-      // Save the final file
+      setProgress(90);
+      setStatusMessage("Creating final Excel file...");
+      
       const finalBuffer = await tagpayWorkbook.xlsx.writeBuffer();
       const blob = new Blob([finalBuffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -534,7 +596,8 @@ const TagPayControl = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
+      
+      setProgress(100);
       setStatusMessage(`Success! Created "${finalFileName}" with ${okRowCount} rows in GKN OK sheet and ${errorRowCount} rows in GKN ERROR sheet.`);
     } catch (error) {
       console.error('Error processing Switch file:', error);
@@ -547,15 +610,15 @@ const TagPayControl = () => {
   return (
     <Layout>
       <div className="content-header">
-        <h1>Tag Pay Updation</h1>
+        <h4 className="page-title">Tag Pay File Updation</h4>
       </div>
+  
       <div className="file-upload-section">
-        <div className="card p-4 mb-4">
-          {/* Step 1: Download Button */}
-          <div>
-            <h2 className="font-bold text-xl mb-2">Step 1: Download Excel File from Google Sheets</h2>
+        <div className="card p-6 mb-6 shadow-md">
+          <div className="step-container">
+            <h2 className="step-title">Step 1: Download Google Sheet</h2>
             <button
-              className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-blue-400"
+              className="step-btn download-btn"
               onClick={downloadFromGoogleSheets}
               disabled={isProcessing}
             >
@@ -563,12 +626,11 @@ const TagPayControl = () => {
               Download TransaccionesTagPay
             </button>
           </div>
-          <br /><br /><br />
-          {/* Step 2: Upload Button */}
-          <div>
-            <h2 className="font-bold text-xl mb-2">Step 2: Upload Sample TagPay Excel File</h2>
+  
+          <div className="step-container">
+            <h2 className="step-title">Step 2: Upload Sample TagPay File</h2>
             <button
-              className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-green-400"
+              className="step-btn upload-btn"
               onClick={() => fileInputRef.current.click()}
               disabled={isProcessing}
             >
@@ -580,28 +642,26 @@ const TagPayControl = () => {
               ref={fileInputRef}
               accept=".xlsx, .xls"
               onChange={handleFileUpload}
-              className="hidden" // Hide the file input
+              className="hidden" 
             />
           </div>
-          <br /><br /><br />
-          {/* Step 3: Process Uploaded File */}
-          <div>
-            <h2 className="font-bold text-xl mb-2">Step 3: Process Uploaded File</h2>
+  
+          <div className="step-container">
+            <h2 className="step-title">Step 3: Process Uploaded File</h2>
             <button
-              className="flex items-center justify-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 disabled:bg-yellow-400"
+              className="step-btn process-btn"
               onClick={processUploadedFile}
               disabled={!uploadedFileName || !downloadedFile || isProcessing}
             >
               <PlayCircle size={18} className={isProcessing ? "animate-spin" : ""} />
-              {isProcessing ? 'Processing...' : 'Update TagPay'}
+              {isProcessing ? 'Processing...' : 'Update TagPay & TagPay Ok Sheet'}
             </button>
           </div>
-          <br /><br /><br />
-          {/* Step 4: Upload Switch File */}
-          <div>
-            <h2 className="font-bold text-xl mb-2">Step 4: Upload Switch Excel File</h2>
+  
+          <div className="step-container">
+            <h2 className="step-title">Step 4: Upload Switch File</h2>
             <button
-              className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-green-400"
+              className="step-btn upload-btn"
               onClick={() => switchFileInputRef.current.click()}
               disabled={isProcessing}
             >
@@ -613,43 +673,53 @@ const TagPayControl = () => {
               ref={switchFileInputRef}
               accept=".xlsx, .xls"
               onChange={handleSwitchFileUpload}
-              className="hidden" // Hide the file input
+              className="hidden" 
             />
           </div>
-          <br /><br /><br />
-          {/* Step 5: Process Switch File */}
-          <div>
-            <h2 className="font-bold text-xl mb-2">Step 5: Process Switch File</h2>
+  
+          <div className="step-container">
+            <h2 className="step-title">Step 5: Process Switch File</h2>
             <button
-              className="flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-purple-400"
+              className="step-btn process-btn"
               onClick={processSwitchFile}
               disabled={!switchFileName || !processedTagPayFile || isProcessing}
             >
               <PlayCircle size={18} className={isProcessing ? "animate-spin" : ""} />
-              {isProcessing ? 'Processing...' : 'Update with Switch Data'}
+              {isProcessing ? 'Processing...' : 'Update GKN OK & GKN Error Sheet'}
             </button>
           </div>
+  
+          {/* Progress Bar */}
+          {isProcessing && (
+            <div className="progress-bar-container">
+              <div className="progress-bar-background">
+                <div className="progress-bar" style={{width: `${progress}%`}}></div>
+              </div>
+              <div className="progress-text">{progress}%</div>
+            </div>
+          )}
+  
           {/* Status Message */}
           {statusMessage && (
-            <div className={`mt-4 p-3 rounded ${statusMessage.includes('Error') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+            <div className={`status-message ${statusMessage.includes('Error') ? 'error-message' : 'success-message'}`}>
               {statusMessage}
             </div>
           )}
-          {/* Display uploaded file name */}
+  
           {uploadedFileName && (
-            <div className="mt-4 p-2 text-sm text-blue-600">
+            <div className="file-info">
               <strong>Uploaded TagPay File:</strong> {uploadedFileName}
             </div>
           )}
-          {/* Display switch file name */}
+  
           {switchFileName && (
-            <div className="mt-2 p-2 text-sm text-blue-600">
+            <div className="file-info">
               <strong>Uploaded Switch File:</strong> {switchFileName}
             </div>
           )}
-          {/* Display downloaded file status */}
+  
           {downloadedFile && (
-            <div className="mt-2 p-2 text-sm text-blue-600">
+            <div className="file-info">
               <strong>Downloaded File:</strong> TransaccionesTagPayDummy.xlsx
             </div>
           )}
@@ -657,6 +727,7 @@ const TagPayControl = () => {
       </div>
     </Layout>
   );
+  
 };
 
 export default TagPayControl;

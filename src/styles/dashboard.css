@@ -296,7 +296,7 @@ button {
   cursor: pointer;
   transition: background-color 0.3s ease;
   width: 100%;
-  max-width: 200px; /* Centered button */
+  max-width: max-content;
   margin-top: 20px;
 }
 
@@ -344,4 +344,137 @@ button:disabled {
     font-size: 0.9rem;
     padding: 10px 15px;
   }
+}
+
+
+/* Page Title */
+.page-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Container for the steps */
+.file-upload-section {
+  margin: 0 auto;
+  padding: 20px;
+  max-width: 800px;
+}
+ 
+
+/* Step Containers */
+.step-container {
+  margin-bottom: 30px;
+}
+
+/* Title for each step */
+.step-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+/* Buttons for each step */ 
+.step-btn { 
+  align-items: center;  /* Vertically align items */
+  gap: 8px;  /* Add space between the icon and text */
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  white-space: nowrap; /* Prevent wrapping of button text */
+}
+
+.step-btn svg {
+  display: inline-block; /* Ensure the SVG is inline */
+  vertical-align: middle; /* Align it in the middle of the text */
+  line-height: 0; /* Remove any unwanted space around the SVG */
+  margin-top: -5px;
+  margin-right: 5px;
+}
+
+.step-btn:hover {
+  opacity: 0.9;
+}
+
+.download-btn { 
+  color: #fff;
+  white-space: nowrap;
+}
+
+.upload-btn {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.process-btn {
+  background-color: #ffc107;
+  color: #fff;
+}
+
+.upload-btn:disabled,
+.download-btn:disabled,
+.process-btn:disabled {
+  background-color: #d6d6d6;
+  cursor: not-allowed;
+}
+
+
+/* Hidden file input */
+.hidden {
+  display: none;
+}
+
+/* Progress bar */
+.progress-bar-container {
+  margin-top: 20px;
+}
+
+.progress-bar-background {
+  width: 100%;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  height: 8px;
+}
+
+.progress-bar {
+  background-color: #007bff;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.progress-text {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+/* Status message styling */
+.status-message {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-top: 20px;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* File Info */
+.file-info {
+  margin-top: 10px;
+  font-size: 0.875rem;
+  color: #007bff;
 }
