@@ -1,22 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Layout from './Layout';
-import "../styles/dashboard.css";
 import ExcelJS from 'exceljs';
+
+// Worker code as a string for inline use
+const workerCode = `
+self.importScripts('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js');
+
+// Optimized constants
+const MAX_ROWS_PER_BATCH = 10000; // Increased batch size for fewer updates
+const PROGRESS_UPDATE_FREQUENCY = 0.05; // Only update progress every 5% (reduces message passing overhead)
+
+self.onmessage = async (e) => {
+  const { txtFileData, excelFileData } = e.data;
+  const startTime = performance.now();
+  
+  try {
+    // Parse text data outside the main processing loop for better performance
+    const rows = parseTextData(txtFileData);
+    const totalRows = rows.length;
+    
+    // Load workbook
+    const workbook = new self.ExcelJS.Workbook();
+    await workbook.xlsx.load(excelFileData);
+    const worksheet = workbook.getWorksheet('detail');
+    
+    if (!worksheet) {
+      throw new Error('Could not find "detail" worksheet');
+    }
+    
+    // Cache template information
+    const templateInfo = cacheTemplateInfo(worksheet);
+    
+    // Process rows efficiently
+    await processAllRows(rows, worksheet, templateInfo, totalRows);
+    
+    // Update summary sheet only once at the end
+    updateSummarySheet(workbook, templateInfo.templateRow);
+    
+    // Get buffer and send back
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Log total processing time
+    const processingTime = ((performance.now() - startTime) / 1000).toFixed(2);
+    
+    // Send explicit completion message - MOVED BELOW progress updates
+    self.postMessage({
+      type: 'complete',
+      buffer: buffer,
+      processingTime: processingTime,
+      totalRows: totalRows
+    });
+    
+  } catch (error) {
+    self.postMessage({
+      type: 'error',
+      message: error.message
+    });
+  }
+};
+
+// Optimized text parsing function
+function parseTextData(txtFileData) {
+  return txtFileData.split('\\n')
+    .map(line => {
+      // Only process non-empty lines
+      if (line.trim().length === 0) return null;
+      const parts = line.split(';');
+      return parts.length > 0 ? parts.slice(0, 14) : null;
+    })
+    .filter(Boolean); // Remove null entries (empty lines)
+}
+
+// Cache all template information in one pass
+function cacheTemplateInfo(worksheet) {
+  const templateRow = worksheet.getRow(2);
+  const templateCellStyles = {};
+  const formulaColumns = [];
+  const formulaTemplates = {};
+  
+  // Store template styles and identify formula columns
+  templateRow.eachCell((cell, colNumber) => {
+    templateCellStyles[colNumber] = cell.style;
+    
+    if (cell.formula) {
+      formulaColumns.push(colNumber);
+      formulaTemplates[colNumber] = cell.formula;
+    }
+  });
+  
+  return {
+    templateRow,
+    templateCellStyles,
+    formulaColumns,
+    formulaTemplates,
+    columnCount: worksheet.columnCount
+  };
+}
+
+// Process all rows with optimized batching
+async function processAllRows(rows, worksheet, templateInfo, totalRows) {
+  const { templateCellStyles, formulaColumns, formulaTemplates, columnCount } = templateInfo;
+  
+  let processedRows = 0;
+  let lastReportedProgress = 0;
+  let rowIndex = 2; // Excel starts at row 1, row 2 is template
+  
+  // Pre-compile the regex pattern outside the loop
+  const formulaRegex = /([A-Za-z]+)(\\d+)/g;
+  
+  // Process rows in larger batches
+  for (let i = 0; i < rows.length; i += MAX_ROWS_PER_BATCH) {
+    const batchEndIndex = Math.min(i + MAX_ROWS_PER_BATCH, rows.length);
+    const batch = rows.slice(i, batchEndIndex);
+    const batchSize = batch.length;
+    
+    // Process batch in one operation
+    processBatchOptimized(
+      batch, 
+      worksheet, 
+      rowIndex, 
+      templateCellStyles, 
+      formulaColumns,
+      formulaTemplates,
+      formulaRegex,
+      columnCount
+    );
+    
+    rowIndex += batchSize;
+    processedRows += batchSize;
+    
+    // Only report progress at certain intervals to reduce overhead
+    const currentProgress = Math.floor((processedRows / totalRows) * 100);
+    if (currentProgress >= lastReportedProgress + (PROGRESS_UPDATE_FREQUENCY * 100)) {
+      self.postMessage({
+        type: 'progress',
+        processedRows,
+        totalRows,
+        progress: Math.min(currentProgress, 99) // Cap at 99% until fully complete
+      });
+      lastReportedProgress = currentProgress;
+    }
+    
+    // Yield to the event loop occasionally to prevent blocking
+    if (i % (MAX_ROWS_PER_BATCH * 5) === 0 && i > 0) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  }
+  
+  // Send final progress update ONLY after all rows are processed
+  // This should be the last progress message before the completion message
+  self.postMessage({
+    type: 'progress',
+    processedRows: totalRows, // Ensure consistency 
+    totalRows: totalRows,
+    progress: 100
+  });
+}
+
+// Optimized batch processing function
+function processBatchOptimized(
+  batch, 
+  worksheet, 
+  startRow, 
+  templateCellStyles, 
+  formulaColumns,
+  formulaTemplates,
+  formulaRegex,
+  columnCount
+) {
+  batch.forEach((rowData, idx) => {
+    const currentRow = worksheet.getRow(startRow + idx);
+    const targetRowNum = startRow + idx;
+    
+    // Set values for columns A to N (1-14) in one loop
+    rowData.forEach((value, colIdx) => {
+      const cell = currentRow.getCell(colIdx + 1);
+      cell.value = value;
+      
+      // Only apply style if it exists
+      const style = templateCellStyles[colIdx + 1];
+      if (style) {
+        cell.style = style;
+      }
+    });
+    
+    // Apply formulas only to known formula columns (faster than checking each cell)
+    formulaColumns.forEach(col => {
+      if (col > 14) { // Only need to process columns after the data (O onwards)
+        const cell = currentRow.getCell(col);
+        
+        // Apply formula with optimized row number calculation
+        let formula = formulaTemplates[col].replace(
+          formulaRegex,
+          (match, column, row) => column + (parseInt(row) + targetRowNum - 2)
+        );
+        
+        cell.value = { formula };
+        
+        // Apply style only if needed
+        const style = templateCellStyles[col];
+        if (style) {
+          cell.style = style;
+        }
+      }
+    });
+    
+    // Commit row to save changes
+    currentRow.commit();
+  });
+}
+
+// Update summary sheet function
+function updateSummarySheet(workbook, templateRow) {
+  const summarySheet = workbook.getWorksheet('summary');
+  if (summarySheet) {
+    const dateCell = summarySheet.getCell(5, 4);
+    dateCell.value = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    
+    // Only apply style if needed
+    const style = templateRow.getCell(4).style;
+    if (style) {
+      dateCell.style = style;
+    }
+  }
+}
+`;
 
 const RecordFinder = () => {
   const [file, setFile] = useState(null);
-  const [txtData, setTxtData] = useState('');
   const [excelFile, setExcelFile] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [processing, setProcessing] = useState(false);
+  const [totalRows, setTotalRows] = useState(0);
+  const [processedRows, setProcessedRows] = useState(0);
+  const [processingTime, setProcessingTime] = useState(null);
+  const workerRef = useRef(null);
+  const workerBlobURLRef = useRef(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setTxtData(e.target.result);
-      };
-      reader.readAsText(file);
       setFile(file);
+      countTotalRows(file);
     }
   };
 
@@ -25,90 +250,146 @@ const RecordFinder = () => {
     setExcelFile(file);
   };
 
+  const countTotalRows = async (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const count = text.split('\n').filter(line => line.trim().length > 0).length;
+      setTotalRows(count);
+    };
+    reader.readAsText(file);
+  };
+
+  // Create a worker instance with the inline code
+  const createWorker = useCallback(() => {
+    // Clean up previous worker if it exists
+    if (workerRef.current) {
+      workerRef.current.terminate();
+    }
+    
+    // Clean up previous blob URL if it exists
+    if (workerBlobURLRef.current) {
+      URL.revokeObjectURL(workerBlobURLRef.current);
+    }
+    
+    // Create a new blob for the worker code
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    workerBlobURLRef.current = URL.createObjectURL(blob);
+    workerRef.current = new Worker(workerBlobURLRef.current);
+    
+    return workerRef.current;
+  }, []);
+
   const updateSwitchFile = async () => {
-    if (!excelFile) {
-      alert('Please select an Excel file first');
+    if (!file || !excelFile) {
+      alert('Please select both files first');
       return;
     }
 
-    // Parse text file data (columns A to N only)
-    const rows = txtData.split('\n')
-      .map((line) => line.split(';').slice(0, 14))
-      .filter(row => row.length > 0);
+    setProcessing(true);
+    setProgress(0);
+    setProcessedRows(0);
+    setProcessingTime(null);
 
     try {
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(excelFile);
-      const worksheet = workbook.getWorksheet('detail');
-
-      if (worksheet) {
-        const templateRow = worksheet.getRow(2);
-        const templateCellStyles = {};
-
-        templateRow.eachCell((cell, colNumber) => {
-          templateCellStyles[colNumber] = cell.style;
-        });
-
-        rows.forEach((row, rowIdx) => {
-          const currentRow = worksheet.getRow(rowIdx + 2);
-          
-          // Set values for columns A to N
-          row.forEach((value, colIdx) => {
-            const cell = currentRow.getCell(colIdx + 1);
-            cell.value = value;
-            cell.style = templateCellStyles[colIdx + 1];
-          });
-        
-          // Apply formulas for other columns (O to V)
-          for (let col = 15; col <= worksheet.columnCount; col++) {
-            const cell = currentRow.getCell(col);
-            const templateCell = templateRow.getCell(col);
-        
-            if (templateCell && templateCell.formula) {
-              cell.style = templateCell.style;
-              
-              // Update formula while preserving constant values
-              let formula = templateCell.formula;
-              
-              // This regex matches cell references (letter followed by number)
-              // but not standalone numbers
-              formula = formula.replace(/([A-Za-z]+)(\d+)/g, (match, column, row) => {
-                // Keep the column letter and update the row number
-                const newRow = parseInt(row) + rowIdx;
-                return column + newRow;
-              });
-              
-              cell.value = { formula };
-            }
-          }
-          
-          currentRow.commit();
-        });
-        
-        const summarySheet = workbook.getWorksheet('summary');
-        if (summarySheet) {
-          const currentDate = new Date();
-          const formattedDate = currentDate.toISOString().slice(0, 10).replace(/-/g, '');
-          const dateCell = summarySheet.getCell(5, 4);
-          dateCell.value = formattedDate;
-          dateCell.style = templateRow.getCell(4).style;
-        }
-      }
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = excelFile.name.split('.')[0] + '_updated.xlsx';
-      link.click();
+      const txtFileData = await readFileAsText(file);
+      const excelFileData = await readFileAsArrayBuffer(excelFile);
       
-      alert('Excel file updated successfully!');
-
+      // Create a worker with our optimized code
+      const worker = createWorker();
+      
+      // Set up worker callbacks
+      worker.onmessage = (e) => {
+        const { type, processedRows, totalRows, progress, buffer, message, processingTime } = e.data;
+        console.log(type)
+        if (type === 'progress') {
+          setProcessedRows(processedRows);
+          setProgress(progress);
+        } 
+        else if (type === 'complete') {
+          setProgress(100);
+          setProcessedRows(totalRows);
+          
+          // Create download
+          const blob = new Blob([buffer], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+          });
+          
+          // Force-trigger download
+          setTimeout(() => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${excelFile.name.split('.')[0]}_updated.xlsx`;
+            document.body.appendChild(link); // Append to body for Firefox compatibility
+            link.click();
+            
+            // Clean up the object URL and link element
+            setTimeout(() => {
+              URL.revokeObjectURL(link.href);
+              document.body.removeChild(link);
+            }, 500);
+            
+            // Set processing time if provided
+            if (processingTime) {
+              setProcessingTime(processingTime);
+            }
+            
+            alert(`Excel file updated successfully! Processed ${totalRows.toLocaleString()} rows in ${processingTime || 'N/A'} seconds.`);
+            setProcessing(false);
+          }, 200); // Small delay to ensure UI updates first
+        } 
+        else if (type === 'error') {
+          alert('Error processing file: ' + message);
+          console.error('Error processing file:', message);
+          setProcessing(false);
+        }
+      };
+      
+      // Start the worker
+      worker.postMessage({
+        txtFileData,
+        excelFileData
+      });
+      
     } catch (error) {
       console.error('Error processing file:', error);
-      alert('Error processing file: ' + error.message + '\nPlease ensure the file is valid and not corrupted.');
+      alert('Error processing file: ' + error.message);
+      setProcessing(false);
     }
   };
+
+  const readFileAsText = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  };
+
+  const readFileAsArrayBuffer = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  // Clean up worker and blob URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      
+      if (workerBlobURLRef.current) {
+        URL.revokeObjectURL(workerBlobURLRef.current);
+        workerBlobURLRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <Layout>
@@ -117,34 +398,64 @@ const RecordFinder = () => {
       </div>
 
       <div className="file-upload-section">
-        <div className="mb-4">
-          <label className="block mb-2">Step 1: Upload Text File</label>
+        <div className="space-y-2">
+          <label className="block font-medium">Step 1: Upload Text File</label>
           <input
             type="file"
             accept=".txt"
             onChange={handleFileChange}
-            className="mb-2"
+            className="w-full p-2 border rounded"
+            disabled={processing}
           />
-          {file && <p>Text File: {file.name}</p>}
+          {file && (
+            <p className="text-sm text-gray-600">
+              Text File: {file.name} ({totalRows.toLocaleString()} rows)
+            </p>
+          )}
         </div>
-
-        <div className="mb-4">
-          <label className="block mb-2">Step 2: Select Excel File to Update</label>
+        <br></br>
+        <div className="space-y-2">
+          <label className="block font-medium">Step 2: Select Excel File to Update</label>
           <input
             type="file"
             accept=".xlsx"
             onChange={handleExcelFileChange}
-            className="mb-2"
+            className="w-full p-2 border rounded"
+            disabled={processing}
           />
-          {excelFile && <p>Excel File: {excelFile.name}</p>}
+          {excelFile && (
+            <p className="text-sm text-gray-600">Excel File: {excelFile.name}</p>
+          )}
         </div>
+
+        {processing && (
+          <div className="space-y-2 mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-600 text-center">
+              Processed {processedRows.toLocaleString()} of {totalRows.toLocaleString()} rows ({Math.round(progress)}%)
+            </p>
+          </div>
+        )}
+        
+        {processingTime && !processing && (
+          <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded">
+            <p className="text-sm text-green-800">
+              Last processing completed in {processingTime} seconds
+            </p>
+          </div>
+        )}
 
         <button
           onClick={updateSwitchFile}
-          disabled={!file || !excelFile}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+          disabled={!file || !excelFile || processing}
+          className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          Update Excel File
+          {processing ? 'Processing...' : 'Update Excel File'}
         </button>
       </div>
     </Layout>

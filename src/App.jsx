@@ -7,6 +7,7 @@ import LandingPage from './pages/LandingPage.jsx';
 import ReconcilationControl from './pages/ReconcilationControl.jsx';
 import '../src/assets/config/i18n';
 import RecordFinder from './pages/RecordFinder.jsx';
+import TagPayControl from './pages/TagPayControl.jsx';
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
         <Route path="/login" element={<Login />} /> 
         <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/reports" element={<Reports />} /> 
+        <Route path="/tagpaycontrol" element={<TagPayControl />} /> 
         <Route path="/globakas" element={<LandingPage />} /> 
         <Route path="/" element={<Login />} />  
         <Route path="/reconcilation" element={<ReconcilationControl />} />

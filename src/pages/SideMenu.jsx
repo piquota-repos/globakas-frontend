@@ -9,8 +9,8 @@ const SideMenu = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
     { icon: <GitCompare size={20} />, label: 'Reconcilation Control', path: '/reconcilation' },
-    { icon: <FolderSearch size={20} />, label: 'Record Finder', path: '/recordfinder' },
-    { icon: <Settings size={20} />, label: 'Settings', path: '/settings' },
+    { icon: <FolderSearch size={20} />, label: 'Switch File Control', path: '/recordfinder' },
+    { icon: <Settings size={20} />, label: 'TagPay Control', path: '/tagpaycontrol' },
     { icon: <History size={20} />, label: 'History', path: '/history' },
     { icon: <HelpCircle size={20} />, label: 'Help', path: '/help' },
     { icon: <LogOut size={20} />, label: 'Logout', path: '/logout' }
