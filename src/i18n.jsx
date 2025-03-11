@@ -40,10 +40,28 @@ i18n.use(initReactI18next).init({
         "Switch_File_Control": "Switch File Control",
         "TagPay_Control": "TagPay Control",
         "Logout": "Logout",
+        "login.welcomeBack":"Welcome Back!",
+        "login.chooseSignInMethod":"Choose SignIn Method",
+        "login.login":"Login",
+        "login.signUp": "SignUp",
+        "login.email":"Email Address",
+        "login.password":"Password",
+        "login.forgotPassword":"Forgot Password",
+        "login.confirmPassword":"Confirm Password",
+        "login.createAccount":"Create Account"
       }
     },
     es: {
       translation: {
+        "login.welcomeBack":"¡Bienvenido de nuevo!",
+        "login.password":"Contraseña",
+        "login.createAccount":"Crear una cuenta",
+        "login.forgotPassword":"Forgot Password",
+        "login.confirmPassword":"confirmar Contraseña",
+        "login.login":"Acceso",
+        "login.email":"Dirección de correo electrónico",
+        "login.signUp": "Inscribirse",
+        "login.chooseSignInMethod":"elija el método de inicio de sesión",
         "TagPay_Control": "Control de pago de etiquetas",
         "file_comparison": "Comparación de archivos",
         "upload_files": "Subir archivos",

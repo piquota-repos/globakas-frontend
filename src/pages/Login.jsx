@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import InputField from '../components/InputField';
-import Button from '../components/Button';
-import '../styles/loginPage.css';
-import googleIcon from '../assets/images/google-icon.png';
 import { useNavigate } from 'react-router-dom';
+import '../styles/loginPage.css';
+import { FcGoogle } from 'react-icons/fc';
+import { HiOutlineMail } from 'react-icons/hi';
+import { RiLockPasswordLine } from 'react-icons/ri';
+import { IoLanguageOutline } from 'react-icons/io5';
 
 const Login = () => {
   const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('login');
-  const [languageTab, setLanguageTab] = useState('english');
+  const [language, setLanguage] = useState('en');
   const [loginData, setLoginData] = useState({
     email: '',
     password: '',
@@ -49,131 +50,148 @@ const Login = () => {
   };
 
   useEffect(() => {
-    i18n.changeLanguage('en');
-    setLanguageTab('english');
-  }, [i18n]);
+    i18n.changeLanguage(language);
+  }, [i18n, language]);
 
   const handleLanguageChange = (lang) => {
+    setLanguage(lang);
     i18n.changeLanguage(lang);
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>{t('login.welcomeBack')}</h1>
-          <p>{t('login.chooseSignInMethod')}</p>
-        </div>
-
-        <div className="language-selector tabs">
-          <Button
-            variant={languageTab === 'english' ? 'primary' : 'secondary'}
-            onClick={() => {
-              handleLanguageChange('en');
-              setLanguageTab('english');
-            }}
-            className={`tab ${languageTab === 'english' ? 'active' : ''}`}
-          >
-            English
-          </Button>
-          <Button
-            variant={languageTab === 'spanish' ? 'primary' : 'secondary'}
-            onClick={() => {
-              handleLanguageChange('es');
-              setLanguageTab('spanish');
-            }}
-            className={`tab ${languageTab === 'spanish' ? 'active' : ''}`}
-          >
-            Español
-          </Button>
-        </div>
-
-        <br />
-
-        <div className="tabs">
-          <Button
-            variant={activeTab === 'login' ? 'primary' : 'secondary'}
-            onClick={() => setActiveTab('login')}
-            className={`tab ${activeTab === 'login' ? 'active' : ''}`}
-          >
-            {t('login.signIn')}
-          </Button>
-          <Button
-            variant={activeTab === 'register' ? 'primary' : 'secondary'}
-            onClick={() => setActiveTab('register')}
-            className={`tab ${activeTab === 'register' ? 'active' : ''}`}
-          >
-            {t('login.register')}
-          </Button>
-        </div>
-
-        <div className="tab-content">
-          {activeTab === 'login' ? (
-            <form onSubmit={handleLoginSubmit} className="login-form">
-              <InputField
-                label={t('login.email')}
-                type="email"
-                name="email"
-                value={loginData.email}
-                onChange={handleLoginChange}
-              />
-              <InputField
-                label={t('login.password')}
-                type="password"
-                name="password"
-                value={loginData.password}
-                onChange={handleLoginChange}
-              />
-              <Button type="submit" variant="primary" fullWidth>
-                {t('login.signIn')}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegisterSubmit} className="register-form">
-              <InputField
-                label={t('login.email')}
-                type="email"
-                name="email"
-                value={registerData.email}
-                onChange={handleRegisterChange}
-              />
-              <InputField
-                label={t('login.password')}
-                type="password"
-                name="password"
-                value={registerData.password}
-                onChange={handleRegisterChange}
-              />
-              <InputField
-                label={t('login.confirmPassword')}
-                type="password"
-                name="confirmPassword"
-                value={registerData.confirmPassword}
-                onChange={handleRegisterChange}
-              />
-              <Button type="submit" variant="primary" fullWidth>
-                {t('login.createAccount')}
-              </Button>
-            </form>
-          )}
-
-          <div className="divider">
-            <span>{t('login.orContinueWith')}</span>
+    <div className="login-wrapper">
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-header">
+            <h1>{t('login.welcomeBack')}</h1>
+            <p>{t('login.chooseSignInMethod')}</p>
           </div>
-
-          <div className="social-buttons">
-            <Button
-              variant="outline"
-              fullWidth
-              icon={<img src={googleIcon} alt="Google" />}
+          <div className="login-language-selector">
+          <button 
+            className="language-button"
+            onClick={() => handleLanguageChange(language === 'en' ? 'es' : 'en')}
+          >
+            <IoLanguageOutline />
+            <span>{language === 'en' ? 'EN' : 'ES'}</span>
+          </button>
+        </div>
+          <div className="auth-tabs">
+            <button
+              className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`}
+              onClick={() => setActiveTab('login')}
             >
-              Google
-            </Button>
+              {t('login.login')}
+            </button>
+            <button
+              className={`auth-tab ${activeTab === 'register' ? 'active' : ''}`}
+              onClick={() => setActiveTab('register')}
+            >
+              {t('login.signUp')}
+            </button>
           </div>
 
-          <p className="terms">
-            {t('login.terms')}
-          </p>
+          <div className="tab-content">
+            {activeTab === 'login' ? (
+              <form onSubmit={handleLoginSubmit} className="auth-form">
+                <div className="form-group">
+                  <div className="input-icon">
+                    <HiOutlineMail />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder={t('login.email')}
+                    value={loginData.email}
+                    onChange={handleLoginChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <div className="input-icon">
+                    <RiLockPasswordLine />
+                  </div>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder={t('login.password')}
+                    value={loginData.password}
+                    onChange={handleLoginChange}
+                    required
+                  />
+                </div>
+
+                <div className="forgot-password">
+                  <a href="#forgot">{t('login.forgotPassword')}</a>
+                </div>
+
+                <button type="submit" className="submit-button">
+                  {t('login.login')}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleRegisterSubmit} className="auth-form">
+                <div className="form-group">
+                  <div className="input-icon">
+                    <HiOutlineMail />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder={t('login.email')}
+                    value={registerData.email}
+                    onChange={handleRegisterChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <div className="input-icon">
+                    <RiLockPasswordLine />
+                  </div>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder={t('login.password')}
+                    value={registerData.password}
+                    onChange={handleRegisterChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <div className="input-icon">
+                    <RiLockPasswordLine />
+                  </div>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder={t('login.confirmPassword')}
+                    value={registerData.confirmPassword}
+                    onChange={handleRegisterChange}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="submit-button">
+                  {t('login.createAccount')}
+                </button>
+              </form>
+            )}
+
+            {/* <div className="divider">
+              <span>{t('login.orContinueWith')}</span>
+            </div>
+
+            <button className="social-button">
+              <FcGoogle className="social-icon" />
+              <span>Google</span>
+            </button>
+
+            <p className="terms">
+              {t('login.terms')}
+            </p> */}
+          </div>
         </div>
       </div>
     </div>
