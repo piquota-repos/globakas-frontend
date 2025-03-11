@@ -5,8 +5,7 @@ import "../styles/reconcilationControl.css";
 import { Download, PlayCircle, Upload } from 'lucide-react';
 import ExcelJS from 'exceljs';
 import { useTranslation } from 'react-i18next';
-
-
+import { FaFileUpload } from 'react-icons/fa';
 
 const TagPayControl = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -169,16 +168,15 @@ const TagPayControl = () => {
               rowValues[colNumber] = cell.value;
             }
           });
-          const newRow = newTagpaySheet.addRow(rowValues); 
+          const newRow = newTagpaySheet.addRow(rowValues);
           if (newRow.getCell(7).value !== null && newRow.getCell(7).value !== undefined) {
-            // Convert to string with full precision
             const value = newRow.getCell(7).value;
             if (typeof value === 'number') {
               newRow.getCell(7).value = String(value);
             }
             newRow.getCell(7).numFmt = '@';
           }
-        
+
         }
       });
       setProgress(60);
@@ -247,10 +245,9 @@ const TagPayControl = () => {
           }
         });
         if (newRow.getCell(7).value !== null && newRow.getCell(7).value !== undefined) {
-          // Convert to string with full precision
           const value = newRow.getCell(7).value;
           if (typeof value === 'number') {
-            newRow.getCell(7).value = String(value);  // Convert number to string
+            newRow.getCell(7).value = String(value);
           }
           newRow.getCell(7).numFmt = '@';
         }
@@ -312,23 +309,18 @@ const TagPayControl = () => {
       await switchWorkbook.xlsx.load(switchBuffer);
       await tagpayWorkbook.xlsx.load(tagpayBuffer);
       setProgress(10);
-
       const detailSheet = switchWorkbook.getWorksheet('detail');
       const tagpayOKSheet = tagpayWorkbook.getWorksheet('TAGPAY OK');
       const originalGKNOKSheet = tagpayWorkbook.getWorksheet('GKN OK');
       const originalGKNErrorSheet = tagpayWorkbook.getWorksheet('GKN ERROR');
-
       if (!detailSheet) {
         setStatusMessage('Error: "Detail" sheet not found in the Switch file.');
         return;
       }
-
       if (!tagpayOKSheet || !originalGKNOKSheet || !originalGKNErrorSheet) {
         setStatusMessage('Error: Required sheets not found in the processed TagPay file.');
         return;
       }
-
-      // Load the uploaded original TagPay file to extract formulas
       const uploadedOriginalBuffer = await uploadedFile.arrayBuffer();
       const uploadedOriginalWorkbook = new ExcelJS.Workbook();
       await uploadedOriginalWorkbook.xlsx.load(uploadedOriginalBuffer);
@@ -339,10 +331,7 @@ const TagPayControl = () => {
         return;
       }
 
-      // Extract formulas from the second row (assuming formulas are consistent across rows)
       const formulaRow = originalTagpayOKSheet.getRow(2);
-
-      // Define column indices to update
       const columnsToUpdate = [
         { letter: 'U', index: 21 },
         { letter: 'V', index: 22 },
@@ -354,25 +343,16 @@ const TagPayControl = () => {
         { letter: 'AE', index: 31 },
         { letter: 'AF', index: 32 }
       ];
-
-      // Store formulas from original sheet
       const columnFormulas = {};
-
-      // Extract formulas from original sheet
       columnsToUpdate.forEach(col => {
         const cell = formulaRow.getCell(col.index);
         if (cell && cell.formula) {
           columnFormulas[col.letter] = cell.formula;
         }
       });
-
-      const columnOIndex = 15; // Column O (assuming it's the 15th column)
-
-      // Extract formulas from the original GKN OK and GKN ERROR sheets for column O
+      const columnOIndex = 15;
       let gknOKFormula = '';
       let gknErrorFormula = '';
-
-      // Retrieve the formula from the first row in column O (assuming it is the same for all rows)
       const gknOKFormulaCell = originalGKNOKSheet.getRow(2).getCell(columnOIndex);
       const gknErrorFormulaCell = originalGKNErrorSheet.getRow(2).getCell(columnOIndex);
 
@@ -383,10 +363,7 @@ const TagPayControl = () => {
       if (gknErrorFormulaCell && gknErrorFormulaCell.formula) {
         gknErrorFormula = gknErrorFormulaCell.formula;
       }
-
-      // Now, process the data and apply the formula dynamically
       setProgress(20);
-
       const switchHeaderRow = detailSheet.getRow(1);
       let actualDateColIndex = -1;
       let paymentTypeColIndex = -1;
@@ -405,7 +382,6 @@ const TagPayControl = () => {
           tagpayClearingColIndex = colNumber;
         }
       });
-
       if (
         actualDateColIndex === -1 ||
         paymentTypeColIndex === -1 ||
@@ -415,17 +391,11 @@ const TagPayControl = () => {
         setStatusMessage('Error: Required columns not found in the Detail sheet.');
         return;
       }
-
       setProgress(30);
-
       const CHUNK_SIZE = 1000;
       let okRowCount = 0;
       let errorRowCount = 0;
-
-      // Define totalRows
       const totalRows = detailSheet.rowCount;
-
-      // Define the GKN OK and GKN ERROR sheets
       const gknOKSheet = tagpayWorkbook.getWorksheet('GKN OK') || tagpayWorkbook.addWorksheet('GKN OK');
       const gknErrorSheet = tagpayWorkbook.getWorksheet('GKN ERROR') || tagpayWorkbook.addWorksheet('GKN ERROR');
 
@@ -436,8 +406,7 @@ const TagPayControl = () => {
         for (let rowNumber = startRow; rowNumber <= endRow; rowNumber++) {
           if (rowNumber <= totalRows) {
             const row = detailSheet.getRow(rowNumber);
-
-            if (rowNumber > 1) { // Skip header row
+            if (rowNumber > 1) {
               const actualDate = row.getCell(actualDateColIndex).value;
               const paymentType = row.getCell(paymentTypeColIndex).value;
               const status = row.getCell(statusColIndex).value;
@@ -446,11 +415,8 @@ const TagPayControl = () => {
               if (actualDate && paymentType && status !== undefined && tagpayClearing) {
                 const paymentTypeStr = paymentType.toString().trim();
                 const statusStr = status.toString().trim();
-
                 if (paymentTypeStr === 'EF') {
                   const rowValues = [];
-
-                  // Copy values matching the columns in the original GKN OK/ERROR sheet headers
                   const originalHeaderRow = statusStr === 'OK' ? originalGKNOKSheet.getRow(1) : originalGKNErrorSheet.getRow(1);
                   originalHeaderRow.eachCell((headerCell, colNumber) => {
                     const headerValue = headerCell.value;
@@ -462,8 +428,6 @@ const TagPayControl = () => {
                       rowValues[colNumber] = null;
                     }
                   });
-
-                  // Formula for column O
                   if (rowValues.length >= 14) {
                     const columnEValue = row.getCell(5).value || ''; // Column E
                     const columnFValue = row.getCell(6).value || ''; // Column F
@@ -487,11 +451,8 @@ const TagPayControl = () => {
           }
         }
 
-        // Add rows to GKN OK and GKN ERROR sheets
         for (const rowData of okRows) {
           const newRow = gknOKSheet.addRow(rowData.values);
-
-          // Apply the formula dynamically for column O
           if (gknOKFormula) {
             const formulaString = gknOKFormula.replace(/N\d+/g, `N${newRow.number}`);
             const cell = newRow.getCell(columnOIndex);
@@ -501,15 +462,12 @@ const TagPayControl = () => {
 
         for (const rowData of errorRows) {
           const newRow = gknErrorSheet.addRow(rowData.values);
-
-          // Apply the formula dynamically for column O
           if (gknErrorFormula) {
             const formulaString = gknErrorFormula.replace(/N\d+/g, `N${newRow.number}`);
             const cell = newRow.getCell(columnOIndex);
             cell.value = { formula: formulaString };
           }
         }
-
         okRowCount += okRows.length;
         errorRowCount += errorRows.length;
       };
@@ -517,63 +475,41 @@ const TagPayControl = () => {
       for (let startRow = 2; startRow <= totalRows; startRow += CHUNK_SIZE) {
         const endRow = Math.min(startRow + CHUNK_SIZE - 1, totalRows);
         await processRowChunk(startRow, endRow);
-
         const progressPercentage = 30 + Math.floor(((startRow + CHUNK_SIZE) / totalRows) * 50);
         setProgress(Math.min(progressPercentage, 80));
-
         await new Promise(resolve => setTimeout(resolve, 0));
         setStatusMessage(`Processing Switch file... Processed ${startRow + CHUNK_SIZE > totalRows ? totalRows : startRow + CHUNK_SIZE} of ${totalRows} rows`);
       }
 
-      // Update the TAGPAY OK sheet with formulas for columns U, V, Z, AA, AB, AC, AD, AE, AF
       setProgress(85);
       setStatusMessage("Updating TAGPAY OK sheet with formulas...");
-
-      // Skip the header row (row 1)
       for (let rowNumber = 2; rowNumber <= tagpayOKSheet.rowCount; rowNumber++) {
         const row = tagpayOKSheet.getRow(rowNumber);
+        columnsToUpdate.forEach(col => {
+          if (columnFormulas[col.letter]) {
+            let formulaString = columnFormulas[col.letter];
+            formulaString = formulaString.replace(/([A-Z]+)(\d+)/g, (match, column, rowNum) => {
+              return `${column}${rowNumber}`;
+            });
 
-        // Apply formulas to specific columns
-        // Update this section in the processSwitchFile function
-        // In the processSwitchFile function, replace the existing code for column Z formatting with this:
-// Find this section in the columnsToUpdate.forEach loop
+            const cell = row.getCell(col.index);
+            cell.value = { formula: formulaString };
+            if (col.letter === 'Z') {
+              const columnACell = row.getCell(1);
 
-columnsToUpdate.forEach(col => {
-  if (columnFormulas[col.letter]) {
-    let formulaString = columnFormulas[col.letter];
-    
-    // Properly update row references in the formula
-    // This pattern looks for column letters followed by numbers and only updates the numbers
-    formulaString = formulaString.replace(/([A-Z]+)(\d+)/g, (match, column, rowNum) => {
-      return `${column}${rowNumber}`;
-    });
-    
-    const cell = row.getCell(col.index);
-    
-    // Apply the formula
-    cell.value = { formula: formulaString };
-    
-    // For column Z specifically, get format from column A
-    if (col.letter === 'Z') {
-      // Get the format from column A of the same row
-      const columnACell = row.getCell(1);  // Column A is index 1
-      
-      if (columnACell && columnACell.style && columnACell.style.numFmt) {
-        // Apply column A's format to column Z
-        cell.numFmt = columnACell.style.numFmt;
-      } else {
-        // If column A has no format, try to get format from original cell
-        const originalCell = originalTagpayOKSheet.getRow(2).getCell(col.index);
-        if (originalCell && originalCell.style && originalCell.style.numFmt) {
-          cell.numFmt = originalCell.style.numFmt;
-        } else {
-          // Apply a default date format if none exists anywhere
-          cell.numFmt = 'dd/mm/yyyy hh:mm:ss';
-        }
-      }
-    }
-  }
-});
+              if (columnACell && columnACell.style && columnACell.style.numFmt) {
+                cell.numFmt = columnACell.style.numFmt;
+              } else {
+                const originalCell = originalTagpayOKSheet.getRow(2).getCell(col.index);
+                if (originalCell && originalCell.style && originalCell.style.numFmt) {
+                  cell.numFmt = originalCell.style.numFmt;
+                } else {
+                  cell.numFmt = 'dd/mm/yyyy hh:mm:ss';
+                }
+              }
+            }
+          }
+        });
 
         if (rowNumber % 100 === 0) {
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -614,10 +550,10 @@ columnsToUpdate.forEach(col => {
       <div className="content-header">
         <h4 className="page-title">{t('Tag_Pay_File_Updation')}</h4>
       </div>
-      <div className="file-upload-section">
+      <div className="comparison-box">
         <div className="card p-6 mb-6 shadow-md">
-          <div className="step-container">
-            <h2 className="step-title">{t('Step 1: Download_Google_Sheet')}</h2>
+          <div className="file-input step-container">
+            <label>{t('Step 1: Download_Google_Sheet')}</label>
             <button
               className="step-btn download-btn"
               onClick={downloadFromGoogleSheets}
@@ -626,26 +562,23 @@ columnsToUpdate.forEach(col => {
               {t('Download_TransaccionesTagPay')}
             </button>
           </div>
-          <div className="step-container">
-            <h2 className="step-title">{t('Step 2: Upload_Sample_TagPay_File')}</h2>
-            <button
-              className="step-btn upload-btn"
-              onClick={() => fileInputRef.current.click()}
-              disabled={isProcessing}
-            >
-              <Upload size={18} />
-              {t('Select_TagPay_File')}
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept=".xlsx, .xls"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
+          <div className="file-input step-container">
+            <label>{t('Step 2: Upload_Sample_TagPay_File')}</label>
+            <div className="file-upload-wrapper" onClick={() => document.getElementById('fileInput1').click()}>
+              <FaFileUpload className="upload-icon" />
+              <span>{uploadedFileName ? uploadedFileName : t('Select TagPay File')}</span>
+              <input
+                ref={fileInputRef}
+                id="fileInput1"
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
           </div>
-          <div className="step-container">
-            <h2 className="step-title">{t('Step 3: Process_Uploaded_File')}</h2>
+          <div className="file-input step-container">
+            <label>{t('Step 3: Process_Uploaded_File')}</label>
             <button
               className="step-btn process-btn"
               onClick={processUploadedFile}
@@ -655,26 +588,23 @@ columnsToUpdate.forEach(col => {
               {isProcessing ? 'Processing...' : t('Update_TagPay_&_TagPay_Ok_Sheet')}
             </button>
           </div>
-          <div className="step-container">
-            <h2 className="step-title">{t('Step 4: Upload_Switch_File')}</h2>
-            <button
-              className="step-btn upload-btn"
-              onClick={() => switchFileInputRef.current.click()}
-              disabled={isProcessing}
-            >
-              <Upload size={18} />
-              {t('Select_Switch_File')}
-            </button>
-            <input
-              type="file"
-              ref={switchFileInputRef}
-              accept=".xlsx, .xls"
-              onChange={handleSwitchFileUpload}
-              className="hidden"
-            />
+          <div className="file-input step-container">
+            <label>{t('Step 4: Upload_Switch_File')}</label>
+            <div className="file-upload-wrapper" onClick={() => document.getElementById('fileInput2').click()}>
+              <FaFileUpload className="upload-icon" />
+              <span>{switchFileName ? switchFileName : t('Select Switch File')}</span>
+              <input
+                ref={switchFileInputRef}
+                id="fileInput2"
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleSwitchFileUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
           </div>
-          <div className="step-container">
-            <h2 className="step-title">{t('Step 5: Process_Switch_File')}</h2>
+          <div className="file-input step-container">
+            <label>{t('Step 5: Process_Switch_File')}</label>
             <button
               className="step-btn process-btn"
               onClick={processSwitchFile}
@@ -695,21 +625,6 @@ columnsToUpdate.forEach(col => {
           {statusMessage && (
             <div className={`status-message ${statusMessage.includes('Error') ? 'error-message' : 'success-message'}`}>
               {statusMessage}
-            </div>
-          )}
-          {uploadedFileName && (
-            <div className="file-info">
-              <strong>{t('Uploaded TagPay File:')}</strong> {uploadedFileName}
-            </div>
-          )}
-          {switchFileName && (
-            <div className="file-info">
-              <strong>{t('Uploaded Switch File:')}</strong> {switchFileName}
-            </div>
-          )}
-          {downloadedFile && (
-            <div className="file-info">
-              <strong>{t('Downloaded File:')}</strong> {t('TransaccionesTagPayDummy.xlsx')}
             </div>
           )}
         </div>

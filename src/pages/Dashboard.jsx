@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx';
 import { FaFileUpload } from 'react-icons/fa';
 import "../styles/dashboard.css";
 import Layout from './Layout';
@@ -83,7 +83,7 @@ const Dashboard = () => {
       <div className="content-header">
         <h1>{t('file_comparison')}</h1>
       </div>
-      
+
       <div className="comparison-box">
         <h2>{t('upload_files')}</h2>
         <div className="file-upload-container">

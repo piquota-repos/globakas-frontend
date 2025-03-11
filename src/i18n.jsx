@@ -20,7 +20,7 @@ i18n.use(initReactI18next).init({
         "select_option_2": "Select Option 2",
         "amount_column_b": "Amount Column B",
         "select_option_3": "Select Option 3",
-        "Record_finder_content": "Record Finder Content",
+        "Record_finder_content": "Switch File Update Process",
         "Step1": "Step 1: Upload Text File",
         "Step2": "Step 2: Select Excel File to Update",
         "Update_Excel_File": "Update Excel File",

@@ -115,7 +115,7 @@
 }
 
 .nav-item.active {
-  
+
   color: var(--side-bar-nav-item-active);
   background: var(--side-bar-nav-item-active-background);
   font-weight: 500;
@@ -151,7 +151,7 @@
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar.closed + .main-content {
+.sidebar.closed+.main-content {
   margin-left: 70px;
 }
 
@@ -251,7 +251,7 @@
 }
 
 .language-selector:hover {
- 
+
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
 
 }
@@ -299,6 +299,7 @@
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -443,7 +444,7 @@
     margin-left: 0;
   }
 
-  .sidebar.closed + .main-content {
+  .sidebar.closed+.main-content {
     margin-left: 60px;
   }
 
@@ -596,7 +597,7 @@ button:disabled {
 .file-upload-section {
   margin: 0 auto;
   padding: 20px;
-  max-width: 800px;
+  max-width: 98%;
 }
 
 
@@ -764,10 +765,12 @@ h2 {
   justify-content: center;
   gap: 10px;
   border: 2px dashed #3498db;
-  padding: 15px;
+  padding: 10px 40px;
   border-radius: 8px;
   cursor: pointer;
   transition: 0.3s;
+  width: 70%;
+  margin: 15px auto;
 }
 
 .file-upload-wrapper:hover {
@@ -779,9 +782,9 @@ h2 {
   color: #3498db;
 }
 
-input[type="file"] {
+/* input[type="file"] {
   display: none;
-}
+} */
 
 .compare-button {
   background: #3498db;

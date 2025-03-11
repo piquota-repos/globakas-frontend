@@ -2,8 +2,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import Layout from './Layout';
 import ExcelJS from 'exceljs';
 import { useTranslation } from 'react-i18next';
+import { FaFileUpload } from 'react-icons/fa';
 
-// Worker code as a string for inline use
 const workerCode = `
 self.importScripts('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js');
 
@@ -227,7 +227,6 @@ function updateSummarySheet(workbook, templateRow) {
 }
 `;
 
-
 const RecordFinder = () => {
   const [file, setFile] = useState(null);
   const [excelFile, setExcelFile] = useState(null);
@@ -239,7 +238,6 @@ const RecordFinder = () => {
   const workerRef = useRef(null);
   const workerBlobURLRef = useRef(null);
   const { t } = useTranslation();
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -247,12 +245,10 @@ const RecordFinder = () => {
       countTotalRows(file);
     }
   };
-
   const handleExcelFileChange = (e) => {
     const file = e.target.files[0];
     setExcelFile(file);
   };
-
   const countTotalRows = async (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -262,20 +258,13 @@ const RecordFinder = () => {
     };
     reader.readAsText(file);
   };
-
-  // Create a worker instance with the inline code
   const createWorker = useCallback(() => {
-    // Clean up previous worker if it exists
     if (workerRef.current) {
       workerRef.current.terminate();
     }
-
-    // Clean up previous blob URL if it exists
     if (workerBlobURLRef.current) {
       URL.revokeObjectURL(workerBlobURLRef.current);
     }
-
-    // Create a new blob for the worker code
     const blob = new Blob([workerCode], { type: 'application/javascript' });
     workerBlobURLRef.current = URL.createObjectURL(blob);
     workerRef.current = new Worker(workerBlobURLRef.current);
@@ -297,11 +286,7 @@ const RecordFinder = () => {
     try {
       const txtFileData = await readFileAsText(file);
       const excelFileData = await readFileAsArrayBuffer(excelFile);
-
-      // Create a worker with our optimized code
       const worker = createWorker();
-
-      // Set up worker callbacks
       worker.onmessage = (e) => {
         const { type, processedRows, totalRows, progress, buffer, message, processingTime } = e.data;
         console.log(type)
@@ -317,8 +302,6 @@ const RecordFinder = () => {
           const blob = new Blob([buffer], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           });
-
-          // Force-trigger download
           setTimeout(() => {
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -326,20 +309,18 @@ const RecordFinder = () => {
             document.body.appendChild(link); // Append to body for Firefox compatibility
             link.click();
 
-            // Clean up the object URL and link element
             setTimeout(() => {
               URL.revokeObjectURL(link.href);
               document.body.removeChild(link);
             }, 500);
 
-            // Set processing time if provided
             if (processingTime) {
               setProcessingTime(processingTime);
             }
 
             alert(`Excel file updated successfully! Processed ${totalRows.toLocaleString()} rows in ${processingTime || 'N/A'} seconds.`);
             setProcessing(false);
-          }, 200); // Small delay to ensure UI updates first
+          }, 200);
         }
         else if (type === 'error') {
           alert('Error processing file: ' + message);
@@ -347,8 +328,6 @@ const RecordFinder = () => {
           setProcessing(false);
         }
       };
-
-      // Start the worker
       worker.postMessage({
         txtFileData,
         excelFileData
@@ -379,7 +358,6 @@ const RecordFinder = () => {
     });
   };
 
-  // Clean up worker and blob URL on unmount
   React.useEffect(() => {
     return () => {
       if (workerRef.current) {
@@ -394,45 +372,43 @@ const RecordFinder = () => {
     };
   }, []);
 
-
   return (
     <Layout>
       <div className="content-header">
         <h1>{t('Record_finder_content')}</h1>
       </div>
-
-      <div className="file-upload-section">
-        <div className="space-y-2">
-
-          <label className="block font-medium">{t('Step1')}</label>
-          <input
-            type="file"
-            accept=".txt"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded"
-            disabled={processing}
-          />
-          {file && (
-            <p className="text-sm text-gray-600">
-              Text File: {file.name} ({totalRows.toLocaleString()} rows)
-            </p>
-          )}
+      <div className="comparison-box">
+        <div className="file-input">
+          <label>{t('Step1')}</label>
+          <div className="file-upload-wrapper" onClick={() => document.getElementById('fileInput1').click()}>
+            <FaFileUpload className="upload-icon" />
+            <span>{file ? file.name : t('Click to Upload')}</span>
+            <input
+              id="fileInput1"
+              type="file"
+              accept=".txt"
+              onChange={handleFileChange}
+              disabled={processing}
+              style={{ display: 'none' }}
+            />
+          </div>
         </div>
-        <br></br>
-        <div className="space-y-2">
-          <label className="block font-medium">{t('Step2')}</label>
-          <input
-            type="file"
-            accept=".xlsx"
-            onChange={handleExcelFileChange}
-            className="w-full p-2 border rounded"
-            disabled={processing}
-          />
-          {excelFile && (
-            <p className="text-sm text-gray-600">Excel File: {excelFile.name}</p>
-          )}
-        </div>
-
+        <br></br><br></br>
+        <div className="file-input">
+          <label>{t('Step2')}</label>
+          <div className="file-upload-wrapper" onClick={() => document.getElementById('fileInput2').click()}>
+            <FaFileUpload className="upload-icon" />
+            <span>{excelFile ? excelFile.name : t('Click to Upload')}</span>
+            <input
+              id="fileInput2"
+              type="file"
+              accept=".xlsx"
+              onChange={handleExcelFileChange}
+              disabled={processing}
+              style={{ display: 'none' }}
+            />
+          </div>
+        </div><br></br>
         {processing && (
           <div className="space-y-2 mt-4">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -460,9 +436,8 @@ const RecordFinder = () => {
           disabled={!file || !excelFile || processing}
           className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          {processing ? 'Processing...'  : t('Update_Excel_File')}
+          {processing ? 'Processing...' : t('Update_Excel_File')}
         </button>
-
       </div>
     </Layout>
   );
