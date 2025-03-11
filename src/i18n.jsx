@@ -44,6 +44,7 @@ i18n.use(initReactI18next).init({
     },
     es: {
       translation: {
+        "TagPay_Control": "Control de pago de etiquetas",
         "file_comparison": "Comparación de archivos",
         "upload_files": "Subir archivos",
         "file1": "Archivo 1",
