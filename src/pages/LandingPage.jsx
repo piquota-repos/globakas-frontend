@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';  
+import { useTranslation } from 'react-i18next';
 import '../styles/landingPage.css';
 import InputField from '../components/InputField';
 import Button from '../components/Button';
@@ -11,7 +11,7 @@ const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
- 
+
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
@@ -168,7 +168,7 @@ const LandingPage = () => {
               <h3>{t('landingPage.about.values.title')}</h3> {/* Translated values title */}
               <ul>
                 {t('landingPage.about.values.items', { returnObjects: true }).map((value, index) => (
-                  <li key={index}>{value}</li>  
+                  <li key={index}>{value}</li>
                 ))}
               </ul>
             </div>
