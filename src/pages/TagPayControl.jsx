@@ -4,6 +4,9 @@ import "../styles/dashboard.css";
 import "../styles/reconcilationControl.css";
 import { Download, PlayCircle, Upload } from 'lucide-react';
 import ExcelJS from 'exceljs';
+import { useTranslation } from 'react-i18next';
+
+
 
 const TagPayControl = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -17,6 +20,7 @@ const TagPayControl = () => {
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
   const switchFileInputRef = useRef(null);
+  const { t } = useTranslation();
 
   const downloadFromGoogleSheets = async () => {
     try {
@@ -484,29 +488,29 @@ const TagPayControl = () => {
   return (
     <Layout>
       <div className="content-header">
-        <h4 className="page-title">Tag Pay File Updation</h4>
+        <h4 className="page-title">{t('Tag_Pay_File_Updation')}</h4>
       </div>
       <div className="file-upload-section">
         <div className="card p-6 mb-6 shadow-md">
           <div className="step-container">
-            <h2 className="step-title">Step 1: Download Google Sheet</h2>
+            <h2 className="step-title">{t('Step 1: Download_Google_Sheet')}</h2>
             <button
               className="step-btn download-btn"
               onClick={downloadFromGoogleSheets}
               disabled={isProcessing} >
               <Download size={18} />
-              Download TransaccionesTagPay
+              {t('Download_TransaccionesTagPay')}
             </button>
           </div>
           <div className="step-container">
-            <h2 className="step-title">Step 2: Upload Sample TagPay File</h2>
+            <h2 className="step-title">{t('Step 2: Upload_Sample_TagPay_File')}</h2>
             <button
               className="step-btn upload-btn"
               onClick={() => fileInputRef.current.click()}
               disabled={isProcessing}
             >
               <Upload size={18} />
-              Select TagPay File
+              {t('Select_TagPay_File')}
             </button>
             <input
               type="file"
@@ -517,25 +521,25 @@ const TagPayControl = () => {
             />
           </div>
           <div className="step-container">
-            <h2 className="step-title">Step 3: Process Uploaded File</h2>
+            <h2 className="step-title">{t('Step 3: Process_Uploaded_File')}</h2>
             <button
               className="step-btn process-btn"
               onClick={processUploadedFile}
               disabled={!uploadedFileName || !downloadedFile || isProcessing}
             >
               <PlayCircle size={18} className={isProcessing ? "animate-spin" : ""} />
-              {isProcessing ? 'Processing...' : 'Update TagPay & TagPay Ok Sheet'}
+              {isProcessing ? 'Processing...' : t('Update_TagPay_&_TagPay_Ok_Sheet')}
             </button>
           </div>
           <div className="step-container">
-            <h2 className="step-title">Step 4: Upload Switch File</h2>
+            <h2 className="step-title">{t('Step 4: Upload_Switch_File')}</h2>
             <button
               className="step-btn upload-btn"
               onClick={() => switchFileInputRef.current.click()}
               disabled={isProcessing}
             >
               <Upload size={18} />
-              Select Switch File
+              {t('Select_Switch_File')}
             </button>
             <input
               type="file"
@@ -546,14 +550,14 @@ const TagPayControl = () => {
             />
           </div>
           <div className="step-container">
-            <h2 className="step-title">Step 5: Process Switch File</h2>
+            <h2 className="step-title">{t('Step 5: Process_Switch_File')}</h2>
             <button
               className="step-btn process-btn"
               onClick={processSwitchFile}
               disabled={!switchFileName || !processedTagPayFile || isProcessing}
             >
               <PlayCircle size={18} className={isProcessing ? "animate-spin" : ""} />
-              {isProcessing ? 'Processing...' : 'Update GKN OK & GKN Error Sheet'}
+              {isProcessing ? 'Processing...' : t('Update_GKN_OK_&_GKN_Error_Sheet')}
             </button>
           </div>
           {isProcessing && (

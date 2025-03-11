@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Layout from './Layout';
 import ExcelJS from 'exceljs';
+import { useTranslation } from 'react-i18next';
 
 // Worker code as a string for inline use
 const workerCode = `
@@ -226,6 +227,7 @@ function updateSummarySheet(workbook, templateRow) {
 }
 `;
 
+
 const RecordFinder = () => {
   const [file, setFile] = useState(null);
   const [excelFile, setExcelFile] = useState(null);
@@ -236,6 +238,7 @@ const RecordFinder = () => {
   const [processingTime, setProcessingTime] = useState(null);
   const workerRef = useRef(null);
   const workerBlobURLRef = useRef(null);
+  const { t } = useTranslation();
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -266,17 +269,17 @@ const RecordFinder = () => {
     if (workerRef.current) {
       workerRef.current.terminate();
     }
-    
+
     // Clean up previous blob URL if it exists
     if (workerBlobURLRef.current) {
       URL.revokeObjectURL(workerBlobURLRef.current);
     }
-    
+
     // Create a new blob for the worker code
     const blob = new Blob([workerCode], { type: 'application/javascript' });
     workerBlobURLRef.current = URL.createObjectURL(blob);
     workerRef.current = new Worker(workerBlobURLRef.current);
-    
+
     return workerRef.current;
   }, []);
 
@@ -294,10 +297,10 @@ const RecordFinder = () => {
     try {
       const txtFileData = await readFileAsText(file);
       const excelFileData = await readFileAsArrayBuffer(excelFile);
-      
+
       // Create a worker with our optimized code
       const worker = createWorker();
-      
+
       // Set up worker callbacks
       worker.onmessage = (e) => {
         const { type, processedRows, totalRows, progress, buffer, message, processingTime } = e.data;
@@ -305,16 +308,16 @@ const RecordFinder = () => {
         if (type === 'progress') {
           setProcessedRows(processedRows);
           setProgress(progress);
-        } 
+        }
         else if (type === 'complete') {
           setProgress(100);
           setProcessedRows(totalRows);
-          
+
           // Create download
-          const blob = new Blob([buffer], { 
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+          const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           });
-          
+
           // Force-trigger download
           setTimeout(() => {
             const link = document.createElement('a');
@@ -322,35 +325,35 @@ const RecordFinder = () => {
             link.download = `${excelFile.name.split('.')[0]}_updated.xlsx`;
             document.body.appendChild(link); // Append to body for Firefox compatibility
             link.click();
-            
+
             // Clean up the object URL and link element
             setTimeout(() => {
               URL.revokeObjectURL(link.href);
               document.body.removeChild(link);
             }, 500);
-            
+
             // Set processing time if provided
             if (processingTime) {
               setProcessingTime(processingTime);
             }
-            
+
             alert(`Excel file updated successfully! Processed ${totalRows.toLocaleString()} rows in ${processingTime || 'N/A'} seconds.`);
             setProcessing(false);
           }, 200); // Small delay to ensure UI updates first
-        } 
+        }
         else if (type === 'error') {
           alert('Error processing file: ' + message);
           console.error('Error processing file:', message);
           setProcessing(false);
         }
       };
-      
+
       // Start the worker
       worker.postMessage({
         txtFileData,
         excelFileData
       });
-      
+
     } catch (error) {
       console.error('Error processing file:', error);
       alert('Error processing file: ' + error.message);
@@ -383,7 +386,7 @@ const RecordFinder = () => {
         workerRef.current.terminate();
         workerRef.current = null;
       }
-      
+
       if (workerBlobURLRef.current) {
         URL.revokeObjectURL(workerBlobURLRef.current);
         workerBlobURLRef.current = null;
@@ -391,15 +394,17 @@ const RecordFinder = () => {
     };
   }, []);
 
+
   return (
     <Layout>
       <div className="content-header">
-        <h1>Record Finder Content</h1>
+        <h1>{t('Record_finder_content')}</h1>
       </div>
 
       <div className="file-upload-section">
         <div className="space-y-2">
-          <label className="block font-medium">Step 1: Upload Text File</label>
+
+          <label className="block font-medium">{t('Step1')}</label>
           <input
             type="file"
             accept=".txt"
@@ -415,7 +420,7 @@ const RecordFinder = () => {
         </div>
         <br></br>
         <div className="space-y-2">
-          <label className="block font-medium">Step 2: Select Excel File to Update</label>
+          <label className="block font-medium">{t('Step2')}</label>
           <input
             type="file"
             accept=".xlsx"
@@ -431,7 +436,7 @@ const RecordFinder = () => {
         {processing && (
           <div className="space-y-2 mt-4">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
+              <div
                 className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
@@ -441,7 +446,7 @@ const RecordFinder = () => {
             </p>
           </div>
         )}
-        
+
         {processingTime && !processing && (
           <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded">
             <p className="text-sm text-green-800">
@@ -455,8 +460,9 @@ const RecordFinder = () => {
           disabled={!file || !excelFile || processing}
           className="w-full px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          {processing ? 'Processing...' : 'Update Excel File'}
+          {processing ? 'Processing...'  : t('Update_Excel_File')}
         </button>
+
       </div>
     </Layout>
   );

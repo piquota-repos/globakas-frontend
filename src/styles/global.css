@@ -7,6 +7,8 @@
     --text-color: #fff;  
     --heading-color: #000;  
     --page-bg-color: #d8e3ed;  
+    --side-bar-nav-item-active: #194685;
+    --side-bar-nav-item-active-background: #e8f0fe;
   }
   
   * {
@@ -21,7 +23,6 @@
     text-align: center;
     font-size: 24px;
     margin-bottom: 20px;
-    /* color: var(--heading-color);   */
   }
   
   button {
@@ -29,7 +30,7 @@
     padding: 10px;
     font-size: 16px;
     color: white;
-    background-color: var(--primary-btn-color); /* Global button color */
+    background-color: var(--primary-btn-color);
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -37,7 +38,7 @@
   }
   
   button:hover {
-    background-color: var(--primary-btn-hover-color); /* Global button hover color */
+    background-color: var(--primary-btn-hover-color);
   }
   
   button:focus {
@@ -47,14 +48,13 @@
   input {
     width: auto;
     padding: 12px;
-    /* margin-bottom: 16px; */
-    border: 2px solid var(--input-border-color); /* Global input border color */
+    border: 2px solid var(--input-border-color);
     border-radius: 5px;
     font-size: 16px;
   }
   
   input:focus {
-    border-color: var(--input-focus-border-color); /* Global input focus color */
+    border-color: var(--input-focus-border-color);
     outline: none;
   }
   
@@ -62,14 +62,11 @@
     color: #888;
   }
   
-  /* input[type='password'] {
-    margin-bottom: 10px;
-  } */
   
   label {
     display: block;
     margin-bottom: 8px;
     font-size: 14px;
-    color: #000; /* Global text color */
+    color: #000; 
   }
   

@@ -1,25 +1,30 @@
 import React from 'react';
-import { LayoutDashboard, FolderSearch, History, Settings, GitCompare, HelpCircle, LogOut, Menu, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom'; 
+import { LayoutDashboard, FolderSearch, Settings, GitCompare, LogOut, Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; 
 import "../styles/dashboard.css";
+import { useTranslation } from 'react-i18next';
 
 const SideMenu = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const location = useLocation(); 
-  
+  const navigate = useNavigate(); 
+  const { t } = useTranslation(); 
   const menuItems = [
-    { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/dashboard' },
-    { icon: <GitCompare size={20} />, label: 'Reconcilation Control', path: '/reconcilation' },
-    { icon: <FolderSearch size={20} />, label: 'Switch File Control', path: '/recordfinder' },
-    { icon: <Settings size={20} />, label: 'TagPay Control', path: '/tagpaycontrol' },
-    { icon: <History size={20} />, label: 'History', path: '/history' },
-    { icon: <HelpCircle size={20} />, label: 'Help', path: '/help' },
-    { icon: <LogOut size={20} />, label: 'Logout', path: '/logout' }
+    { icon: <LayoutDashboard size={20} />, label: t('Dashboard'), path: '/dashboard' },
+    { icon: <GitCompare size={20} />, label: t('Reconcilation_Control'), path: '/reconcilation' },
+    { icon: <FolderSearch size={20} />, label: t('Switch_File_Control'), path: '/recordfinder' },
+    { icon: <Settings size={20} />, label: t('TagPay_Control'), path: '/tagpaycontrol' },
+    { icon: <LogOut size={20} />, label: t('Logout'), path: '/login', onClick: () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate('/login');
+      }
+    }
   ];
 
   return (
     <aside className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
       <div className="sidebar-header">
-        <h2>Globakas</h2>
+        <h2>GLOBOKAS</h2>
         <button 
           className="toggle-sidebar" 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -32,7 +37,8 @@ const SideMenu = ({ isSidebarOpen, setIsSidebarOpen }) => {
           <Link 
             key={index} 
             to={item.path} 
-            className={`nav-item ${location.pathname === item.path ? 'active' : ''}`} // Check if the current path matches
+            className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+            onClick={item.onClick} 
           >
             {item.icon}
             <span>{item.label}</span>
